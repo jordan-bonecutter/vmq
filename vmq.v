@@ -3,22 +3,60 @@
 #include <czmq.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 
+// Helper fn's for the wrapping
 fn C.vmq_socktype(&char) int
+fn C.vmq_new_message(voidptr) voidptr
+
+// Native ZMQ fn's
 fn C.zmq_ctx_new() voidptr
 fn C.zmq_ctx_destroy(voidptr)
 fn C.zmq_socket(voidptr, int) voidptr
 fn C.zmq_close(voidptr)
 fn C.zmq_send(voidptr, voidptr, u64, int)
+fn C.zmq_recv(voidptr, voidptr, usize, int) int
+fn C.zmq_msg_recv()
 fn C.zmq_bind(voidptr, &char) int
 fn C.zmq_connect(voidptr, &char) int
 fn C.zmq_setsockopt(voidptr, int, voidptr, usize) int
+fn C.zmq_msg_init(voidptr)
+fn C.zmq_msg_close(voidptr)
+
+// Error handling
 fn C.strerror(int) &char
 
+// Wrap ZMQ Context
 struct Context {
 	ctx voidptr
 }
 
+fn new_context() &Context {
+	return &Context{
+		ctx: C.zmq_ctx_new()
+	}
+}
+
+fn (ctx &Context) free() {
+	C.zmq_ctx_destroy(ctx.ctx)
+}
+
+// Wrap message
+struct Message {
+	msg voidptr
+}
+
+fn new_message() &Message {
+	return &Message{
+		msg: C.vmq_new_message(0)
+	}
+}
+
+fn (m &Message) free() {
+	C.zmq_msg_close(m.msg)
+}
+
+// All ZMQ socket types
 enum SocketType {
 	@pub
 	sub
@@ -34,20 +72,12 @@ enum SocketType {
 	router
 }
 
+// Socket struct
 struct Socket {
 	sock voidptr
 }
 
-fn new_context() &Context {
-	return &Context{
-		ctx: C.zmq_ctx_new()
-	}
-}
-
-fn (ctx &Context) free() {
-	C.zmq_ctx_destroy(ctx.ctx)
-}
-
+// Create a new typed socket
 fn new_socket(ctx &Context, t SocketType) ?&Socket {
 	mut z_sock_type := int(0)
 
@@ -96,22 +126,35 @@ fn (s Socket) connect(addr string) ? {
 }
 
 fn (s Socket) send(payload []byte) {
-	c_payload := unsafe { &byte(&payload[0]) }
+	c_payload := payload.data
 	C.zmq_send(s.sock, c_payload, u64(payload.len), 0)
 }
 
-fn (s Socket) set_affinity(affinity u64) ? {
-	C.set_sockopt(s.sock, )
+fn (s Socket) recv(buf []byte) int {
+	return C.zmq_recv(s.sock, buf.data, buf.len, 0)
 }
 
 fn main() {
 	c := new_context()
-	s := new_socket(c, SocketType.@pub) or {
+	push := new_socket(c, SocketType.push) or {
 		panic('Couldn\'t create socket!')
 	}
-	s.bind("tcp://127.0.0.1:4044") or {
+	push.bind("inproc://test") or {
 		panic(err)
 	}
-	s.send("hello!".bytes())
+
+	pull := new_socket(c, SocketType.pull) or {
+		panic('Couldn\'t create socket!')
+	}
+	pull.connect("inproc://test") or {
+		panic(err)
+	}
+
+	push.send("hello!".bytes())
+
+	my_buf := []byte{len: 100}
+	pull.recv(my_buf)
+
+	print(my_buf)
 }
 

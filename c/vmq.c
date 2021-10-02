@@ -4,6 +4,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include <stdlib.h>
 #include <czmq.h>
 #include <string.h>
 
@@ -37,31 +38,32 @@ int vmq_socktype(const char *type) {
   return -1;
 }
 
+// I know, I know... they're not all here. Implement them and PR!
 int vmq_sockopt(const char *opt) {
-  if(strcmp(opt, "AFFINITY") == 0) {
-    return ZMQ_AFFINITY;
-  } else if (strcmp(opt, "BACKLOG")) {
-    return ZMQ_BACKLOG;
-  } else if (strcmp(opt, "BINDTODEVICE")) {
-    return ZMQ_BINDTODEVICE;
-  } else if (strcmp(opt, "CONNECT_ROUTING_ID")) {
-    return ZMQ_CONNECT_ROUTING_ID;
-  } else if (strcmp(opt, "CONFLATE")) {
-    return ZMQ_CONFLATE;
-  } else if (strcmp(opt, "CONNECT_TIMEOUT")) {
-    return ZMQ_CONNECT_TIMEOUT;
-  } else if (strcmp(opt, "CURVE_PUBLICKEY")) {
+  if(strcmp(opt, "CURVE_PUBLICKEY") == 0) {
     return ZMQ_CURVE_PUBLICKEY;
-  } else if (strcmp(opt, "CURVE_SECRETKEY")) {
+  } else if(strcmp(opt, "CURVE_SECRETCKEY") == 0) {
     return ZMQ_CURVE_SECRETKEY;
-  } else if (strcmp(opt, "CURVE_SERVER")) {
+  } else if(strcmp(opt, "CURVE_SERVER") == 0) {
     return ZMQ_CURVE_SERVER;
-  } else if (strcmp(opt, "GSSAPI_PLAINTEXT")) {
-    return ZMQ_GSSAPI_PLAINTEXT;
-  } else if (strcmp(opt, "GSSAPI_PRINCIPAL")) {
-    return ZMQ_GSSAPI_PRINCIPAL;
-  } else if (strcmp(opt, "GSSAPI_SERVER")) {
-    return ZMQ_GSSAPI_SERVER;
+  } else if(strcmp(opt, "CURVE_SERVERKEY") == 0) {
+    return ZMQ_CURVE_SERVERKEY;
+  } else if(strcmp(opt, "PLAIN_PASSWORD") == 0) {
+    return ZMQ_PLAIN_PASSWORD;
+  } else if(strcmp(opt, "PLAIN_SERVER") == 0) {
+    return ZMQ_PLAIN_SERVER;
+  } else if(strcmp(opt, "PLAIN_USERNAME") == 0) {
+    return ZMQ_PLAIN_USERNAME;
+  } else if(strcmp(opt, "SUBSCRIBE") == 0) {
+    return ZMQ_SUBSCRIBE;
+  } else if(strcmp(opt, "UNSUBSCRIBE") == 0) {
+    return ZMQ_UNSUBSCRIBE;
   }
+
+  return -1;
+}
+
+void *vmq_new_message(const char *foo) {
+  return malloc(sizeof(zmq_msg_t));
 }
 
