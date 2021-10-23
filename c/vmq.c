@@ -4,6 +4,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <czmq.h>
 #include <string.h>
@@ -63,7 +64,7 @@ int vmq_sockopt(const char *opt) {
   return -1;
 }
 
-void *vmq_new_message(const char *foo) {
+void *vmq_new_message() {
   return malloc(sizeof(zmq_msg_t));
 }
 

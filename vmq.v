@@ -7,20 +7,22 @@
 
 // Helper fn's for the wrapping
 fn C.vmq_socktype(&char) int
-fn C.vmq_new_message(voidptr) voidptr
+fn C.vmq_new_message() voidptr
 
 // Native ZMQ fn's
 fn C.zmq_ctx_new() voidptr
 fn C.zmq_ctx_destroy(voidptr)
 fn C.zmq_socket(voidptr, int) voidptr
 fn C.zmq_close(voidptr)
-fn C.zmq_send(voidptr, voidptr, u64, int)
+fn C.zmq_send(voidptr, voidptr, u64, int) int
 fn C.zmq_recv(voidptr, voidptr, usize, int) int
-fn C.zmq_msg_recv()
+fn C.zmq_msg_init(voidptr) int
+fn C.zmq_msg_recv(voidptr, voidptr, int) int
+fn C.zmq_msg_size(voidptr) usize
+fn C.zmq_msg_data(voidptr) &byte
 fn C.zmq_bind(voidptr, &char) int
 fn C.zmq_connect(voidptr, &char) int
 fn C.zmq_setsockopt(voidptr, int, voidptr, usize) int
-fn C.zmq_msg_init(voidptr)
 fn C.zmq_msg_close(voidptr)
 
 // Error handling
@@ -48,12 +50,13 @@ struct Message {
 
 fn new_message() &Message {
 	return &Message{
-		msg: C.vmq_new_message(0)
+		msg: C.vmq_new_message()
 	}
 }
 
 fn (m &Message) free() {
 	C.zmq_msg_close(m.msg)
+	unsafe{ free(m.msg) }
 }
 
 // All ZMQ socket types
@@ -125,36 +128,50 @@ fn (s Socket) connect(addr string) ? {
 	}
 }
 
-fn (s Socket) send(payload []byte) {
+fn (s Socket) send(payload []byte) ? {
 	c_payload := payload.data
-	C.zmq_send(s.sock, c_payload, u64(payload.len), 0)
+	rc := C.zmq_send(s.sock, c_payload, u64(payload.len), 0)
+	if rc == -1 {
+		return error(unsafe{ cstring_to_vstring(C.strerror(C.errno)) })
+	}
 }
 
-fn (s Socket) recv(buf []byte) int {
-	return C.zmq_recv(s.sock, buf.data, buf.len, 0)
+fn (s Socket) recv_buf(buf []byte) ? {
+	rc := C.zmq_recv(s.sock, buf.data, buf.len, 0)
+	if rc == -1 {
+		return error(unsafe{ cstring_to_vstring(C.strerror(C.errno)) })
+	}
+}
+
+fn (s Socket) recv() ?[]byte {
+	msg := new_message()
+	C.zmq_msg_init(msg.msg)
+	rc := C.zmq_msg_recv(msg.msg, s.sock, 0)
+	if rc == -1 {
+		return error(unsafe{ cstring_to_vstring(C.strerror(C.errno)) })
+	}
+	size := C.zmq_msg_size(msg.msg)
+	data := C.zmq_msg_data(msg.msg)
+	buf := []byte{len: int(size)}
+	for i, _ in buf {
+		unsafe{ buf[i] = data[i] }
+	}
+
+	return buf
 }
 
 fn main() {
 	c := new_context()
-	push := new_socket(c, SocketType.push) or {
-		panic('Couldn\'t create socket!')
-	}
-	push.bind("inproc://test") or {
-		panic(err)
-	}
+	push := new_socket(c, SocketType.push)?
+	push.bind("inproc://test")?
 
-	pull := new_socket(c, SocketType.pull) or {
-		panic('Couldn\'t create socket!')
-	}
-	pull.connect("inproc://test") or {
-		panic(err)
-	}
+	pull := new_socket(c, SocketType.pull)?
+	pull.connect("inproc://test")?
 
-	push.send("hello!".bytes())
+	push.send("hello!".bytes())?
 
-	my_buf := []byte{len: 100}
-	pull.recv(my_buf)
+	my_buf := pull.recv()?
 
-	print(my_buf)
+	println(string(my_buf))
 }
 
