@@ -1,3 +1,5 @@
+module vmq
+
 #pkgconfig libzmq
 #flag @VMODROOT/c/vmq_bridge.o
 #include <czmq.h>
@@ -29,16 +31,18 @@ fn C.zmq_msg_close(voidptr)
 fn C.strerror(int) &char
 
 // Wrap ZMQ Context
-struct Context {
+pub struct Context {
 	ctx voidptr
 }
 
-fn new_context() &Context {
+// Create a new context
+pub fn new_context() &Context {
 	return &Context{
 		ctx: C.zmq_ctx_new()
 	}
 }
 
+// Free data associated with a context
 fn (ctx &Context) free() {
 	C.zmq_ctx_destroy(ctx.ctx)
 }
@@ -48,19 +52,21 @@ struct Message {
 	msg voidptr
 }
 
+// Create a new message
 fn new_message() &Message {
 	return &Message{
 		msg: C.vmq_new_message()
 	}
 }
 
+// Free data associated with a message
 fn (m &Message) free() {
 	C.zmq_msg_close(m.msg)
 	unsafe{ free(m.msg) }
 }
 
 // All ZMQ socket types
-enum SocketType {
+pub enum SocketType {
 	@pub
 	sub
 	xpub
@@ -76,12 +82,12 @@ enum SocketType {
 }
 
 // Socket struct
-struct Socket {
+pub struct Socket {
 	sock voidptr
 }
 
 // Create a new typed socket
-fn new_socket(ctx &Context, t SocketType) ?&Socket {
+pub fn new_socket(ctx &Context, t SocketType) ?&Socket {
 	mut z_sock_type := int(0)
 
 	match t {
@@ -108,11 +114,13 @@ fn new_socket(ctx &Context, t SocketType) ?&Socket {
 	}
 }
 
+// Free data associated with a socket
 fn (s &Socket) free() {
 	C.zmq_close(s.sock)
 }
 
-fn (s Socket) bind(addr string) ? {
+// Bind to an address
+pub fn (s Socket) bind(addr string) ? {
 	rc := C.zmq_bind(s.sock, &char(addr.str) )
 	if rc != 0 {
 		err_str := C.strerror(C.errno)
@@ -120,7 +128,8 @@ fn (s Socket) bind(addr string) ? {
 	}
 }
 
-fn (s Socket) connect(addr string) ? {
+// Connect to an address
+pub fn (s Socket) connect(addr string) ? {
 	rc := C.zmq_connect(s.sock, &char(addr.str) )
 	if rc != 0 {
 		err_str := C.strerror(C.errno)
@@ -128,7 +137,8 @@ fn (s Socket) connect(addr string) ? {
 	}
 }
 
-fn (s Socket) send(payload []byte) ? {
+// Send the payload on a socket
+pub fn (s Socket) send(payload []byte) ? {
 	c_payload := payload.data
 	rc := C.zmq_send(s.sock, c_payload, u64(payload.len), 0)
 	if rc == -1 {
@@ -136,14 +146,18 @@ fn (s Socket) send(payload []byte) ? {
 	}
 }
 
-fn (s Socket) recv_buf(buf []byte) ? {
+// Receive up to buf.len bytes from a socket
+pub fn (s Socket) recv_buf(buf []byte) ?int {
 	rc := C.zmq_recv(s.sock, buf.data, buf.len, 0)
 	if rc == -1 {
 		return error(unsafe{ cstring_to_vstring(C.strerror(C.errno)) })
 	}
+	return rc
 }
 
-fn (s Socket) recv() ?[]byte {
+// Receive an entire message from a socket
+// The returned array contains the message
+pub fn (s Socket) recv() ?[]byte {
 	msg := new_message()
 	C.zmq_msg_init(msg.msg)
 	rc := C.zmq_msg_recv(msg.msg, s.sock, 0)
@@ -158,20 +172,5 @@ fn (s Socket) recv() ?[]byte {
 	}
 
 	return buf
-}
-
-fn main() {
-	c := new_context()
-	push := new_socket(c, SocketType.push)?
-	push.bind("inproc://test")?
-
-	pull := new_socket(c, SocketType.pull)?
-	pull.connect("inproc://test")?
-
-	push.send("hello!".bytes())?
-
-	my_buf := pull.recv()?
-
-	println(string(my_buf))
 }
 
