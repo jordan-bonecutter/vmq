@@ -62,7 +62,7 @@ fn new_message() &Message {
 // Free data associated with a message
 fn (m &Message) free() {
 	C.zmq_msg_close(m.msg)
-	unsafe{ free(m.msg) }
+	unsafe { free(m.msg) }
 }
 
 // All ZMQ socket types
@@ -121,7 +121,7 @@ fn (s &Socket) free() {
 
 // Bind to an address
 pub fn (s Socket) bind(addr string) ? {
-	rc := C.zmq_bind(s.sock, &char(addr.str) )
+	rc := C.zmq_bind(s.sock, &char(addr.str))
 	if rc != 0 {
 		err_str := C.strerror(C.errno)
 		return error(unsafe { cstring_to_vstring(err_str) })
@@ -130,7 +130,7 @@ pub fn (s Socket) bind(addr string) ? {
 
 // Connect to an address
 pub fn (s Socket) connect(addr string) ? {
-	rc := C.zmq_connect(s.sock, &char(addr.str) )
+	rc := C.zmq_connect(s.sock, &char(addr.str))
 	if rc != 0 {
 		err_str := C.strerror(C.errno)
 		return error(unsafe { cstring_to_vstring(err_str) })
@@ -142,7 +142,7 @@ pub fn (s Socket) send(payload []byte) ? {
 	c_payload := payload.data
 	rc := C.zmq_send(s.sock, c_payload, u64(payload.len), 0)
 	if rc == -1 {
-		return error(unsafe{ cstring_to_vstring(C.strerror(C.errno)) })
+		return error(unsafe { cstring_to_vstring(C.strerror(C.errno)) })
 	}
 }
 
@@ -150,7 +150,7 @@ pub fn (s Socket) send(payload []byte) ? {
 pub fn (s Socket) recv_buf(buf []byte) ?int {
 	rc := C.zmq_recv(s.sock, buf.data, buf.len, 0)
 	if rc == -1 {
-		return error(unsafe{ cstring_to_vstring(C.strerror(C.errno)) })
+		return error(unsafe { cstring_to_vstring(C.strerror(C.errno)) })
 	}
 	return rc
 }
@@ -162,15 +162,16 @@ pub fn (s Socket) recv() ?[]byte {
 	C.zmq_msg_init(msg.msg)
 	rc := C.zmq_msg_recv(msg.msg, s.sock, 0)
 	if rc == -1 {
-		return error(unsafe{ cstring_to_vstring(C.strerror(C.errno)) })
+		return error(unsafe { cstring_to_vstring(C.strerror(C.errno)) })
 	}
 	size := C.zmq_msg_size(msg.msg)
 	data := C.zmq_msg_data(msg.msg)
 	buf := []byte{len: int(size)}
 	for i, _ in buf {
-		unsafe{ buf[i] = data[i] }
+		unsafe {
+			buf[i] = data[i]
+		}
 	}
 
 	return buf
 }
-
