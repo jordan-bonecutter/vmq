@@ -59,6 +59,12 @@ int vmq_sockopt(const char *opt) {
     return ZMQ_SUBSCRIBE;
   } else if(strcmp(opt, "UNSUBSCRIBE") == 0) {
     return ZMQ_UNSUBSCRIBE;
+  } else if (strcmp(opt, "CONNECT_TIMEOUT") == 0) {
+    return ZMQ_CONNECT_TIMEOUT;
+  } else if (strcmp(opt, "RCVTIMEO") == 0) {
+    return ZMQ_RCVTIMEO;
+  } else if (strcmp(opt, "SNDTIMEO") == 0) {
+    return ZMQ_SNDTIMEO;
   }
 
   return -1;

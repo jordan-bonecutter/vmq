@@ -1,5 +1,7 @@
 module vmq
 
+import time
+
 #pkgconfig libzmq
 #flag @VMODROOT/c/vmq_bridge.o
 #flag -I @VMODROOT/c
@@ -178,6 +180,27 @@ pub fn (s Socket) recv() ?[]byte {
 	}
 
 	return buf
+}
+
+pub fn (s Socket) set_connect_timeout(dur time.Duration) ? {
+	millis := int(dur.milliseconds())
+	if C.zmq_setsockopt(s.sock, C.vmq_sockopt(c'CONNECT_TIMEOUT'), &millis, sizeof(int)) == -1 {
+		return error(unsafe { cstring_to_vstring(C.strerror(C.errno)) })
+	}
+}
+
+pub fn (s Socket) set_recv_timeout(dur time.Duration) ? {
+	millis := int(dur.milliseconds())
+	if C.zmq_setsockopt(s.sock, C.vmq_sockopt(c'RCVTIMEO'), &millis, sizeof(int)) == -1 {
+		return error(unsafe { cstring_to_vstring(C.strerror(C.errno)) })
+	}
+}
+
+pub fn (s Socket) set_send_timeout(dur time.Duration) ? {
+	millis := int(dur.milliseconds())
+	if C.zmq_setsockopt(s.sock, C.vmq_sockopt(c'SNDTIMEO'), &millis, sizeof(int)) == -1 {
+		return error(unsafe { cstring_to_vstring(C.strerror(C.errno)) })
+	}
 }
 
 pub fn (s Socket) subscribe(topic []byte) ? {
