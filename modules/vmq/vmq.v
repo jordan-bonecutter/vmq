@@ -180,6 +180,18 @@ pub fn (s Socket) recv() ?[]byte {
 	return buf
 }
 
+pub fn (s Socket) subscribe(topic []byte) ? {
+	if C.zmq_setsockopt(s.sock, C.vmq_sockopt(c'SUBSCRIBE'), topic.data, topic.len) == -1 {
+		return error(unsafe { cstring_to_vstring(C.strerror(C.errno)) })
+	}
+}
+
+pub fn (s Socket) unsubscribe(topic []byte) ? {
+	if C.zmq_setsockopt(s.sock, C.vmq_sockopt(c'UNSUBSCRIBE'), topic.data, topic.len) == -1 {
+		return error(unsafe { cstring_to_vstring(C.strerror(C.errno)) })
+	}
+}
+
 // Setup the socket for curve encryted communication
 pub fn (s Socket) setup_curve(publickey string, secretkey string) ? {
 	if publickey.len != 40 || secretkey.len != 40 {
