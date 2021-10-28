@@ -2,6 +2,8 @@ module vmq
 
 #pkgconfig libzmq
 #flag @VMODROOT/c/vmq_bridge.o
+#flag -I @VMODROOT/c
+#include <vmq.h>
 #include <czmq.h>
 #include <errno.h>
 #include <string.h>
@@ -9,7 +11,8 @@ module vmq
 
 // Helper fn's for the wrapping
 fn C.vmq_socktype(&char) int
-fn C.vmq_new_message() voidptr
+fn C.vmq_sockopt(&char) int
+fn C.vmq_make_message() voidptr
 
 // Native ZMQ fn's
 fn C.zmq_ctx_new() voidptr
@@ -26,6 +29,7 @@ fn C.zmq_bind(voidptr, &char) int
 fn C.zmq_connect(voidptr, &char) int
 fn C.zmq_setsockopt(voidptr, int, voidptr, usize) int
 fn C.zmq_msg_close(voidptr)
+fn C.zmq_curve_keypair(&char, &char) int
 
 // Error handling
 fn C.strerror(int) &char
@@ -55,7 +59,7 @@ struct Message {
 // Create a new message
 fn new_message() &Message {
 	return &Message{
-		msg: C.vmq_new_message()
+		msg: C.vmq_make_message()
 	}
 }
 
@@ -174,4 +178,52 @@ pub fn (s Socket) recv() ?[]byte {
 	}
 
 	return buf
+}
+
+// Setup the socket for curve encryted communication
+pub fn (s Socket) setup_curve(publickey string, secretkey string) ? {
+	if publickey.len != 40 || secretkey.len != 40 {
+		return error('Key length must be 40!')
+	}
+
+	if C.zmq_setsockopt(s.sock, C.vmq_sockopt(c'CURVE_PUBLICKEY'), &char(publickey.str),
+		41) == -1 {
+		return error(unsafe { cstring_to_vstring(C.strerror(C.errno)) })
+	}
+
+	if C.zmq_setsockopt(s.sock, C.vmq_sockopt(c'CURVE_SECRETKEY'), &char(secretkey.str),
+		41) == -1 {
+		return error(unsafe { cstring_to_vstring(C.strerror(C.errno)) })
+	}
+}
+
+// Set the socket to act as a curve server
+pub fn (s Socket) set_curve_server() ? {
+	option := int(1)
+	if C.zmq_setsockopt(s.sock, C.vmq_sockopt(c'CURVE_SERVER'), &option, sizeof(option)) == -1 {
+		return error(unsafe { cstring_to_vstring(C.strerror(C.errno)) })
+	}
+}
+
+pub fn (s Socket) set_curve_serverkey(serverkey string) ? {
+	if serverkey.len != 40 {
+		return error('Key length must be 40!')
+	}
+
+	if C.zmq_setsockopt(s.sock, C.vmq_sockopt(c'CURVE_SERVERKEY'), &char(serverkey.str),
+		41) == -1 {
+		return error(unsafe { cstring_to_vstring(C.strerror(C.errno)) })
+	}
+}
+
+// Generate a z85 encoded curve keypair
+pub fn curve_keypair() ?(string, string) {
+	pub_buf := []byte{len: 41}
+	sec_buf := []byte{len: 41}
+
+	if C.zmq_curve_keypair(&char(pub_buf.data), &char(sec_buf.data)) == -1 {
+		return error('ZMQ was not built with cryptographic support!')
+	}
+
+	return string(pub_buf), string(sec_buf)
 }

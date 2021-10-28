@@ -43,7 +43,7 @@ int vmq_socktype(const char *type) {
 int vmq_sockopt(const char *opt) {
   if(strcmp(opt, "CURVE_PUBLICKEY") == 0) {
     return ZMQ_CURVE_PUBLICKEY;
-  } else if(strcmp(opt, "CURVE_SECRETCKEY") == 0) {
+  } else if(strcmp(opt, "CURVE_SECRETKEY") == 0) {
     return ZMQ_CURVE_SECRETKEY;
   } else if(strcmp(opt, "CURVE_SERVER") == 0) {
     return ZMQ_CURVE_SERVER;
@@ -64,7 +64,7 @@ int vmq_sockopt(const char *opt) {
   return -1;
 }
 
-void *vmq_new_message() {
+void *vmq_make_message() {
   return malloc(sizeof(zmq_msg_t));
 }
 
