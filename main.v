@@ -19,7 +19,6 @@ fn main() {
 	push.bind('tcp://127.0.0.1:5555') ?
 	pull.connect('tcp://127.0.0.1:5555') ?
 	time.sleep(time.second)
-	println('Connected!')
 	push.send('hello!'.bytes()) ?
 	t := go recv(pull)
 	t.wait()
@@ -27,9 +26,7 @@ fn main() {
 
 fn recv(pull &vmq.Socket) {
 	time.sleep(time.second)
-	println('Receiving!')
 	msg := pull.recv() or {
-		println('RIGHTHERE!')
 		panic(err)
 	}
 	println(string(msg))
