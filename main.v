@@ -3,8 +3,23 @@ import time
 
 fn main() {
 	ctx := vmq.new_context()
+	test_timeout(ctx) ?
 	test_pubsub(ctx) ?
 	test_pushpull(ctx) ?
+}
+
+fn test_timeout(ctx &vmq.Context) ? {
+	p1 := vmq.new_socket(ctx, vmq.SocketType.pair) ?
+	p2 := vmq.new_socket(ctx, vmq.SocketType.pair) ?
+
+	p1.bind('inproc://timeouttest') ?
+	p1.set_send_timeout(time.millisecond * 100) ?
+	p1.send('this will fail becuase no pair is connected'.bytes()) or {}
+
+	p2.connect('inproc://timeouttest') ?
+	p1.send('but that\'s ok, we set a timeout!'.bytes()) ?
+
+	println(string(p2.recv()?))
 }
 
 fn test_pubsub(ctx &vmq.Context) ? {
@@ -14,11 +29,11 @@ fn test_pubsub(ctx &vmq.Context) ? {
 	p.bind('inproc://pubsubtest') ?
 	s.connect('inproc://pubsubtest') ?
 
-	s.subscribe('hi'.bytes()) ?
+	s.subscribe('[topic]'.bytes()) ?
 
-	p.send('hi world!'.bytes()) ?
-	p.send('bye world!'.bytes()) ?
-	p.send('hi (again)!'.bytes()) ?
+	p.send('[topic] hi world!'.bytes()) ?
+	p.send('[othertopic] bye world!'.bytes()) ?
+	p.send('[topic] hi (again)!'.bytes()) ?
 
 	m1 := s.recv()?
 	println(string(m1))
@@ -26,12 +41,12 @@ fn test_pubsub(ctx &vmq.Context) ? {
 	m2 := s.recv()?
 	println(string(m2))
 
-	s.unsubscribe('hi'.bytes())?
-	s.subscribe('hey'.bytes())?
+	s.unsubscribe('[topic]'.bytes())?
+	s.subscribe('[othertopic]'.bytes())?
 
 	time.sleep(time.second)
-	p.send('hi (again**2)!'.bytes())?
-	p.send('hey world!'.bytes())?
+	p.send('[topic] hi (again**2)!'.bytes())?
+	p.send('[othertopic] hey world!'.bytes())?
 
 	m3 := s.recv()?
 	println(string(m3))
