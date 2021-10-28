@@ -25,7 +25,6 @@ fn main() {
 }
 
 fn recv(pull &vmq.Socket) {
-	time.sleep(time.second)
 	msg := pull.recv() or {
 		panic(err)
 	}
