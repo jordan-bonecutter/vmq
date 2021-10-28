@@ -3,7 +3,7 @@ module vmq
 import time
 
 #pkgconfig libzmq
-#flag @VMODROOT/c/vmq_bridge.o
+#flag @VMODROOT/c/vmq.o
 #flag -I @VMODROOT/c
 #include <vmq.h>
 #include <czmq.h>
