@@ -19,7 +19,7 @@ fn test_timeout(ctx &vmq.Context) ? {
 	p2.connect('inproc://timeouttest') ?
 	p1.send('but that\'s ok, we set a timeout!'.bytes()) ?
 
-	println(string(p2.recv()?))
+	println(p2.recv()?.bytestr())
 }
 
 fn test_pubsub(ctx &vmq.Context) ? {
@@ -36,10 +36,10 @@ fn test_pubsub(ctx &vmq.Context) ? {
 	p.send('[topic] hi (again)!'.bytes()) ?
 
 	m1 := s.recv()?
-	println(string(m1))
+	println(m1.bytestr())
 
 	m2 := s.recv()?
-	println(string(m2))
+	println(m2.bytestr())
 
 	s.unsubscribe('[topic]'.bytes())?
 	s.subscribe('[othertopic]'.bytes())?
@@ -49,7 +49,7 @@ fn test_pubsub(ctx &vmq.Context) ? {
 	p.send('[othertopic] hey world!'.bytes())?
 
 	m3 := s.recv()?
-	println(string(m3))
+	println(m3.bytestr())
 }
 
 fn test_pushpull(ctx &vmq.Context) ? {
@@ -77,5 +77,5 @@ fn recv(pull &vmq.Socket) {
 	msg := pull.recv() or {
 		panic(err)
 	}
-	println(string(msg))
+	println(msg.bytestr())
 }
