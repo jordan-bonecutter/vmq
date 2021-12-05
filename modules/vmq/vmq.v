@@ -260,5 +260,5 @@ pub fn curve_keypair() ?(string, string) {
 		return error('ZMQ was not built with cryptographic support!')
 	}
 
-	return string(pub_buf), string(sec_buf)
+	return pub_buf.bytestr(), sec_buf.bytestr()
 }
