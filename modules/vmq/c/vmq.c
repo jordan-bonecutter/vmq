@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <czmq.h>
+#include <zmq.h>
 #include <string.h>
 
 int vmq_socktype(const char *type) {

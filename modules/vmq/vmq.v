@@ -6,7 +6,7 @@ import time
 #flag @VMODROOT/c/vmq.o
 #flag -I @VMODROOT/c
 #include <vmq.h>
-#include <czmq.h>
+#include <zmq.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
