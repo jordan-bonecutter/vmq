@@ -217,8 +217,8 @@ pub fn (s Socket) unsubscribe(topic []byte) ? {
 
 // Setup the socket for curve encryted communication
 pub fn (s Socket) setup_curve(publickey string, secretkey string) ? {
-	if publickey.len != 40 || secretkey.len != 40 {
-		return error('Key length must be 40!')
+	if publickey.len != 41 || secretkey.len != 41 {
+		return error('Key length must be 41!')
 	}
 
 	if C.zmq_setsockopt(s.sock, C.vmq_sockopt(c'CURVE_PUBLICKEY'), &char(publickey.str),
@@ -241,8 +241,8 @@ pub fn (s Socket) set_curve_server() ? {
 }
 
 pub fn (s Socket) set_curve_serverkey(serverkey string) ? {
-	if serverkey.len != 40 {
-		return error('Key length must be 40!')
+	if serverkey.len != 41 {
+		return error('Key length must be 41!')
 	}
 
 	if C.zmq_setsockopt(s.sock, C.vmq_sockopt(c'CURVE_SERVERKEY'), &char(serverkey.str),
