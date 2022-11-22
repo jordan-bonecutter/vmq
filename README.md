@@ -1,5 +1,5 @@
 # vmq
-![Run Main](https://github.com/jordan-bonecutter/vmq/workflows/Run Main/badge.svg)
+![Run Main](https://github.com/jordan-bonecutter/vmq/workflows/Run%20Main/badge.svg)
 
 
 V Wrapper For ZMQ
