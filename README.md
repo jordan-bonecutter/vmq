@@ -1,4 +1,7 @@
 # vmq
+![Run Main](https://github.com/jordan-bonecutter/vmq/workflows/Run Main/badge.svg)
+
+
 V Wrapper For ZMQ
 
 `vmq` attempts to maintain a similar API to libzmq. Typical usage is:
