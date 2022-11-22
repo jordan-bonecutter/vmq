@@ -1,0 +1,18 @@
+name: Run Main
+
+on: push
+
+jobs:
+  run-main:
+    name: Run Main
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+      
+      - name: Setup V
+        uses: vlang/setup-v@v1.1
+      
+      - name: Compile and run main.v
+        run: v run main.v
